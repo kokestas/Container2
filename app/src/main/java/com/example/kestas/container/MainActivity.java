@@ -1,76 +1,74 @@
 package com.example.kestas.container;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 
-import org.apache.commons.io.FileUtils;
+import android.widget.Toast;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 
-public class MainActivity extends Activity {
-    private ArrayList<String> items;
-    private ArrayAdapter<String> itemsAdapter;
-    private ListView lvItems;
+
+public class MainActivity extends AppCompatActivity {
+
+    DbHelper mDbHelper;
+    public Button btnAdd,btnViewData;
+    public EditText editTitle;
+    public EditText editNote;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        lvItems = (ListView) findViewById(R.id.lvItems);
-        items = new ArrayList<String>();
-        readItems();
-        itemsAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_list_item_1, items);
-        lvItems.setAdapter(itemsAdapter);
-        items.add("Paspausk ir laikyk kad istrintum mane");
-        setupListViewListener();
-    }
-    public void onAddItem(View v) {
-        EditText etNewItem = (EditText) findViewById(R.id.etNewItem);
-        String itemText = etNewItem.getText().toString();
-        itemsAdapter.add(itemText);
-        etNewItem.setText("");
-        writeItems();
-    }
-    private void setupListViewListener() {
-        lvItems.setOnItemLongClickListener(
-                new AdapterView.OnItemLongClickListener() {
-                    @Override
-                    public boolean onItemLongClick(AdapterView<?> adapter,
-                                                   View item, int pos, long id) {
-                        items.remove(pos);
-                        itemsAdapter.notifyDataSetChanged();
-                        writeItems();
-                        return true;
-                    }
+        editTitle = (EditText) findViewById(R.id.editTitle);
+        editNote = (EditText) findViewById(R.id.editNote);
+        btnAdd = (Button) findViewById(R.id.btnAdd);
+        btnViewData = (Button) findViewById(R.id.btnView);
+        mDbHelper = new DbHelper(this);
 
-                });
-    }
-        private void readItems() {
-            File filesDir = getFilesDir();
-            File todoFile = new File(filesDir, "todo.txt");
-            try {
-                items = new ArrayList<String>(FileUtils.readLines(todoFile));
-            } catch (IOException e) {
-                items = new ArrayList<String>();
+        btnAdd.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                String newTitle = editTitle.getText().toString();
+                String newNote = editNote.getText().toString();
+                if(editTitle.length() != 0 && editNote.length() != 0){
+                    AddData(newTitle,newNote);
+                    editTitle.setText("");
+                    editNote.setText("");
+                } else {
+                    toastMessage("Input wrong");
+                }
             }
+        });
+        btnViewData.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                Intent intent = new Intent(MainActivity.this,ListDataActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+    public void AddData(String newTitle, String newNote){
+        boolean insertData = mDbHelper.addData(newTitle,newNote);
+        if(insertData){
+            toastMessage("Note created succesfully!");
+        } else {
+            toastMessage("Something went wrong!");
         }
 
-        private void writeItems() {
-            File filesDir = getFilesDir();
-            File todoFile = new File(filesDir, "todo.txt");
-            try {
-                FileUtils.writeLines(todoFile, items);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+    }
+    private void toastMessage(String message){
+        Toast.makeText(this,message, Toast.LENGTH_SHORT).show();
+    }
+
+
+
 }
